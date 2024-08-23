@@ -1,0 +1,307 @@
+import React, { useState, useEffect, useRef } from 'react';
+import './RandomText.css';
+import { isTextPresent } from './util';
+import Content from './components/Content';
+import Table from './components/Table';
+import ExtraContent from './components/ExtraContent';
+
+const RandomText = () => {
+  const [textArray, setTextArray] = useState([]);
+  const [charsPerLine, setCharsPerLine] = useState(0);
+  const [numberOfLines, setNumberOfLines] = useState(0);
+  const [highlightData, setHighlightData] = useState([]);
+  const [renderedText, setRenderedText] = useState('');
+
+  const highlightListRef = useRef(null);
+
+  const testcharacters = `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz                `;
+  const charWidth = 10;
+  const charHeight = 18;
+
+  const generateInitialText = () => {
+    const width = window.innerWidth * 0.995; // 80% of the width
+    const height = window.innerHeight * 0.9;
+
+    const calculatedCharsPerLine = Math.floor(width / charWidth);
+    const calculatedNumberOfLines = Math.floor(height / charHeight);
+    const totalChars = calculatedCharsPerLine * calculatedNumberOfLines;
+
+    const initialTextArray = Array.from({ length: totalChars }, () => {
+      return testcharacters[Math.floor(Math.random() * testcharacters.length)];
+    });
+
+    setCharsPerLine(calculatedCharsPerLine);
+    setNumberOfLines(calculatedNumberOfLines);
+    setTextArray(initialTextArray);
+  };
+
+  useEffect(() => {
+    generateInitialText();
+
+    const handleResize = () => {
+      generateInitialText();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    const interval = setInterval(() => {
+      setTextArray((prevTextArray) => {
+        const newTextArray = [...prevTextArray];
+        const updatesPerInterval = Math.floor(newTextArray.length * 0.05 + Math.floor(Math.random() * 20) + 1);
+
+        for (let i = 0; i < updatesPerInterval; i++) {
+          const randomPosition = Math.floor(Math.random() * newTextArray.length);
+          newTextArray[randomPosition] = testcharacters[Math.floor(Math.random() * testcharacters.length)];
+        }
+
+        return newTextArray;
+      });
+    }, 200);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const calculateHighlights = () => {
+      let newHighlights = [];
+      let newText = '';
+
+      for (let i = 0; i < numberOfLines; i++) {
+        const lineStart = i * charsPerLine;
+        const lineEnd = lineStart + charsPerLine;
+        const line = textArray.slice(lineStart, lineEnd).join('');
+        const splits = line.split(' ');
+
+        const highlightedLine = splits.map((word, index) => {
+          if (isTextPresent(word)) {
+            newHighlights.push({ line: i, wordIndex: index, text: word });
+            return `<span class="highlight" style="background-color: red">${word}</span>`;
+          }
+          return word;
+        }).join(' ');
+
+        newText += highlightedLine + '<br>';
+      }
+
+      // Update highlightData only if new highlights are found
+      if (newHighlights.length > 0) {
+        setHighlightData(prevHighlights => [...prevHighlights, ...newHighlights]);
+      }
+
+      setRenderedText(newText);
+    };
+
+    calculateHighlights();
+  }, [textArray, charsPerLine, numberOfLines]);
+
+  useEffect(() => {
+    if (highlightListRef.current) {
+      highlightListRef.current.scrollTop = highlightListRef.current.scrollHeight;
+    }
+  }, [highlightData]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const header = document.querySelector('.header');
+      if (header) {
+        const headerHeight = header.offsetHeight;
+        const scrollPosition = window.scrollY;
+
+        if (scrollPosition >= headerHeight) {
+          header.classList.add('sticky');
+        } else {
+          header.classList.remove('sticky');
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  return (
+    <>
+      <div className="random-text-container">
+        <div className="random-text-wrapper">
+          <pre className="random-text-pre">
+            <div
+              className="random-text"
+              dangerouslySetInnerHTML={{ __html: renderedText }}
+            />
+          </pre>
+        </div>
+
+        <div className="highlight-list" ref={highlightListRef}>
+          {[...new Set(highlightData.map((highlight) => highlight.text.toUpperCase()))].map((uniqueText, index) => (
+            <div key={index} className="highlighted-item">
+              <a href={`https://en.wikipedia.org/wiki/${uniqueText}`} target='_blank' rel='noopener noreferrer'>{uniqueText}</a>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className='flex-container'>
+        <div className='header'>PILLS.</div>
+        <div className='content-item'>
+          <Content />
+          <Table />
+          <ExtraContent/>
+          <hr className='hr'/>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default RandomText;
+
+
+
+
+
+
+// css 
+
+
+.random-text-container {
+  display: flex;
+  height: 100vh; /* Full height of the viewport */
+  width: 100vw;
+ 
+}
+
+.random-text-wrapper {
+  flex: 4; /* 80% width */
+  padding: 15px;
+ 
+}
+
+.random-text-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.highlight-list {
+  flex: 1; /* 20% width */
+  padding: 15px;
+  /* background-color: #f5f5f5; */
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.highlighted-item  {
+  /* background-color: rgb(205, 37, 37); */
+  color: rgba(255, 255, 255, 0.87);
+  padding: 5px;
+  margin-bottom: 5px;
+  border-radius: 3px;
+  cursor: pointer;
+
+}
+.highlighted-item  a {
+  text-decoration: none; /* Remove underline */
+  color: inherit;        /* Use the color of the parent element */
+  background: none;      /* Remove any background */
+  border: none;          /* Remove border */
+}
+.highlighted-item a:hover {
+  color: red;
+}
+.random-text {
+  text-wrap: nowrap;
+}
+.flex-container {
+  display: flex;
+}
+.header {
+  position: sticky;
+  top: 0;
+  font-size: 150px;
+  font-weight: bolder;
+  background-color: red; /* Initial color */
+  height: 100vh;
+  flex: 1;
+  transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.header.sticky {
+  background-color: rgba(255, 255, 255, 0.87); /* Color when sticky */
+  color: black
+}
+
+.content-item {
+  flex: 1;
+}
+.content {
+  width: 70%;
+  margin: auto;
+
+}
+
+table {
+  width: 80%;
+  border-collapse: collapse;
+  margin: auto
+}
+th, td {
+  border: 1px solid  rgba(255, 255, 255, 0.87);
+  padding: 8px;
+  text-align: center;
+}
+th {
+  background-color: black;
+}
+tr:nth-child(even) {
+  background-color: black;
+}
+.hr {
+  width: 30%;
+  margin: 50px auto;
+  height: 5px;
+  background-color: rgb(86, 81, 81);
+  border-radius: 5px;
+  border-color: rgb(86, 81, 81);
+}
+
+
+
+// utils 
+
+
+// import nlp from 'compromise';
+
+// /**
+//  * Checks if a given text has meaning using the compromise library.
+//  * @param {string} text - The text to check.
+//  * @returns {boolean} - Returns true if the text has meaning, false otherwise.
+//  */
+// export const hasMeaning = (text) => {
+//   const doc = nlp(text);
+
+//   // Check if the text is recognized as a valid term
+//   const terms = doc.terms().out('array');
+  
+//   // If any term is recognized, return true
+//   return terms.length > 0 && terms.some(term => term !== '');
+// };
+
+import fileContent from './assets/a.txt?raw';
+
+// Convert file content into a Set for fast lookup
+const dictionaryWords = new Set(fileContent.split('\n').map(word => word.trim().toLowerCase()));
+
+/**
+ * Checks if a given text is present in the dictionary file.
+ * @param {string} text - The text to check.
+ * @returns {boolean} - Returns true if the text is present, false otherwise.
+ */
+export const isTextPresent = (text) => {
+  return dictionaryWords.has(text.toLowerCase().trim());
+};
