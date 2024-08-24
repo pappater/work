@@ -1,5 +1,6 @@
+// app
+
 import React, { useState, useEffect, useRef } from 'react';
-import './RandomText.css';
 import { isTextPresent } from './util';
 import Content from './components/Content';
 import Table from './components/Table';
@@ -11,10 +12,11 @@ const RandomText = () => {
   const [numberOfLines, setNumberOfLines] = useState(0);
   const [highlightData, setHighlightData] = useState([]);
   const [renderedText, setRenderedText] = useState('');
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   const highlightListRef = useRef(null);
 
-  const testcharacters = `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz                `;
+  const testcharacters = `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz                              `;
   const charWidth = 10;
   const charHeight = 18;
 
@@ -56,7 +58,7 @@ const RandomText = () => {
 
         return newTextArray;
       });
-    }, 200);
+    }, 300);
 
     return () => {
       clearInterval(interval);
@@ -83,10 +85,9 @@ const RandomText = () => {
           return word;
         }).join(' ');
 
-        newText += highlightedLine + '<br>';
+        newText += highlightedLine;
       }
 
-      // Update highlightData only if new highlights are found
       if (newHighlights.length > 0) {
         setHighlightData(prevHighlights => [...prevHighlights, ...newHighlights]);
       }
@@ -105,21 +106,10 @@ const RandomText = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const header = document.querySelector('.header');
-      if (header) {
-        const headerHeight = header.offsetHeight;
-        const scrollPosition = window.scrollY;
-
-        if (scrollPosition >= headerHeight) {
-          header.classList.add('sticky');
-        } else {
-          header.classList.remove('sticky');
-        }
-      }
+      setScrollPosition(window.scrollY);
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -128,31 +118,49 @@ const RandomText = () => {
 
   return (
     <>
-      <div className="random-text-container">
-        <div className="random-text-wrapper">
-          <pre className="random-text-pre">
+    <h1 className='md:hidden text-9xl m-auto w-full text-center mt-10' >PILLS.</h1>
+      {/* Header */}
+      <div className={`grid md:grid-cols-4 gap-4 text-slate-300 md:m-20 m-10`} >
+        <div className="col-span-3 h-[99vh] overflow-hidden">
+          <div className="text-justify">
             <div
-              className="random-text"
               dangerouslySetInnerHTML={{ __html: renderedText }}
             />
-          </pre>
+          </div>
         </div>
 
-        <div className="highlight-list" ref={highlightListRef}>
+        <div className="flex flex-wrap max-h-screen overflow-y-auto text-justify" ref={highlightListRef}>
           {[...new Set(highlightData.map((highlight) => highlight.text.toUpperCase()))].map((uniqueText, index) => (
-            <div key={index} className="highlighted-item">
-              <a href={`https://en.wikipedia.org/wiki/${uniqueText}`} target='_blank' rel='noopener noreferrer'>{uniqueText}</a>
-            </div>
+            <a key={index} className="text-slate-300 mr-4 flex-1 flex-wrap" href={`https://en.wikipedia.org/wiki/${uniqueText}`} target='_blank' rel='noopener noreferrer'>{uniqueText}</a>
           ))}
         </div>
       </div>
-      <div className='flex-container'>
-        <div className='header'>PILLS.</div>
-        <div className='content-item'>
-          <Content />
-          <Table />
-          <ExtraContent/>
-          <hr className='hr'/>
+
+      {/* Content */}
+      <div className='md:grid md:grid-cols-2 hidden'>
+        {/* Sub content 1 */}
+        <div
+          className="header sticky top-0 text-[150px] font-extrabold h-screen bg-red-600 text-white"
+        >
+          PILLS.
+        </div>
+
+        {/* Sub content 2 */}
+        <div className="bg-red-600">
+          <div
+            className="  transform translate-x-1/2 transition-transform  ease-smooth"
+            style={{
+              transform: `translate(-50%, -${scrollPosition* 0.1}px)`,
+              zIndex: 50,
+            }}
+          >
+            <div className="max-w-3xl mx-auto">
+              <Content />
+              <Table />
+              <ExtraContent />
+              <hr className="w-[30%] my-9 mx-auto bg-slate-800 rounded-md border-slate-800 h-2" />
+            </div>
+          </div>
         </div>
       </div>
     </>
@@ -163,135 +171,7 @@ export default RandomText;
 
 
 
-
-
-
-// css 
-
-
-.random-text-container {
-  display: flex;
-  height: 100vh; /* Full height of the viewport */
-  width: 100vw;
- 
-}
-
-.random-text-wrapper {
-  flex: 4; /* 80% width */
-  padding: 15px;
- 
-}
-
-.random-text-pre {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.highlight-list {
-  flex: 1; /* 20% width */
-  padding: 15px;
-  /* background-color: #f5f5f5; */
-  overflow-y: auto;
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.highlighted-item  {
-  /* background-color: rgb(205, 37, 37); */
-  color: rgba(255, 255, 255, 0.87);
-  padding: 5px;
-  margin-bottom: 5px;
-  border-radius: 3px;
-  cursor: pointer;
-
-}
-.highlighted-item  a {
-  text-decoration: none; /* Remove underline */
-  color: inherit;        /* Use the color of the parent element */
-  background: none;      /* Remove any background */
-  border: none;          /* Remove border */
-}
-.highlighted-item a:hover {
-  color: red;
-}
-.random-text {
-  text-wrap: nowrap;
-}
-.flex-container {
-  display: flex;
-}
-.header {
-  position: sticky;
-  top: 0;
-  font-size: 150px;
-  font-weight: bolder;
-  background-color: red; /* Initial color */
-  height: 100vh;
-  flex: 1;
-  transition: background-color 0.3s ease; /* Smooth transition */
-}
-
-.header.sticky {
-  background-color: rgba(255, 255, 255, 0.87); /* Color when sticky */
-  color: black
-}
-
-.content-item {
-  flex: 1;
-}
-.content {
-  width: 70%;
-  margin: auto;
-
-}
-
-table {
-  width: 80%;
-  border-collapse: collapse;
-  margin: auto
-}
-th, td {
-  border: 1px solid  rgba(255, 255, 255, 0.87);
-  padding: 8px;
-  text-align: center;
-}
-th {
-  background-color: black;
-}
-tr:nth-child(even) {
-  background-color: black;
-}
-.hr {
-  width: 30%;
-  margin: 50px auto;
-  height: 5px;
-  background-color: rgb(86, 81, 81);
-  border-radius: 5px;
-  border-color: rgb(86, 81, 81);
-}
-
-
-
-// utils 
-
-
-// import nlp from 'compromise';
-
-// /**
-//  * Checks if a given text has meaning using the compromise library.
-//  * @param {string} text - The text to check.
-//  * @returns {boolean} - Returns true if the text has meaning, false otherwise.
-//  */
-// export const hasMeaning = (text) => {
-//   const doc = nlp(text);
-
-//   // Check if the text is recognized as a valid term
-//   const terms = doc.terms().out('array');
-  
-//   // If any term is recognized, return true
-//   return terms.length > 0 && terms.some(term => term !== '');
-// };
-
+// 
 import fileContent from './assets/a.txt?raw';
 
 // Convert file content into a Set for fast lookup
@@ -305,3 +185,170 @@ const dictionaryWords = new Set(fileContent.split('\n').map(word => word.trim().
 export const isTextPresent = (text) => {
   return dictionaryWords.has(text.toLowerCase().trim());
 };
+
+
+
+//content 
+
+import React from 'react';
+
+const Content = () => {
+  return (
+    <>
+      <div className='w-[70%] m-auto'>
+        <h1 className='text-11xl font-extrabold'>{"English Open Word List (EOWL) "}</h1>
+        <p>The “English Open Word List” (EOWL) was developed by Ken Loge, but is almost entirely derived from the “UK Advanced Cryptics Dictionary” (UKACD) Version 1.6, by J Ross Beresford. The original copyright document for the UKACD can be found here.
+
+          As a developer of word games or spelling checkers you may find few public domain word lists available that are well-maintained and thorough. The “UK Advanced Cryptics Dictionary” is an excellent and comprehensive word list, but it isn’t particularly well-suited for certain Scrabble™ style computer word games. I created the EOWL for this purpose.
+
+          The EOWL currently contains about 128,985 words. To make EOWL more usable for computer word games all words longer than 10 letters were removed from the UKACD source list, and all proper nouns and words requiring diacritical symbols, hyphens, and apostrophes were removed. This makes it much like the standard ENABLE word list, but EOWL is somewhat smaller (by 44,000 words or so) since it contains no words longer than 10 characters. I separated the original single word list document into 26 individual files to make it easier to work with and added select words from the “Scrabble™ Players Dictionary, Third Edition™ 1995, ISBN 0-87779-220-8.”
+
+          The current distribution of words for each letter in EOWL is listed side.</p>
+      </div>
+    </>
+  );
+};
+
+export default Content;
+
+
+
+//extea conte 
+
+import React from 'react';
+
+const ExtraContent = () => {
+ 
+
+  return (
+    <div style={{width:'70%', margin:'auto'}}>
+   DIFFERENCES BETWEEN UKACD & EOWL:
+UK Advanced Cryptics Dictionary (UKACD):
+
+Some entries are more than one word in length. Some entries include words longer than 10 letters. Diacritics from other languages are largely intact. Proper nouns are included in the list. Hyphenated word entries are included in the list. English Open Word List (EOWL):
+
+All multiple word entries have been removed. All words are 10 letters or less in length. All diacritic symbols have been removed. All proper nouns have been removed. All hyphenated word entries have been removed. Note that all files in EOWL are encoded as Unicode (UTF-8), with Unix style line breaks.
+
+Below, you will find the original licensing information for the “UK Advanced Cryptics Dictionary.”
+
+UK Advanced Cryptics Dictionary Licensing Information:
+
+Copyright © J Ross Beresford 1993-1999. All Rights Reserved. The following restriction is placed on the use of this publication: if the UK Advanced Cryptics Dictionary is used in a software package or redistributed in any form, the copyright notice must be prominently displayed and the text of this document must be included verbatim.
+
+There are no other restrictions: I would like to see the list distributed as widely as possible.
+    </div>
+  );
+};
+
+export default ExtraContent;
+
+
+//tabel 
+
+import React from 'react';
+
+const Table = () => {
+  return (
+    <div className="w-4/5 mx-auto my-4">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="bg-black text-white">
+            <th className="border border-gray-300 px-4 py-2">Letter</th>
+            <th className="border border-gray-300 px-4 py-2">Words Count</th>
+            <th className="border border-gray-300 px-4 py-2">Letter</th>
+            <th className="border border-gray-300 px-4 py-2">Words Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            ['A', '7,296', 'N', '2,522'],
+            ['B', '7,272', 'O', '3,681'],
+            ['C', '11,382', 'P', '10,278'],
+            ['D', '7,217', 'Q', '720'],
+            ['E', '5,151', 'R', '6,794'],
+            ['F', '5,389', 'S', '15,917'],
+            ['G', '4,747', 'T', '7,289'],
+            ['H', '4,500', 'U', '4,425'],
+            ['I', '3,685', 'V', '2,364'],
+            ['J', '1,287', 'W', '3,147'],
+            ['K', '1,577', 'X', '122'],
+            ['L', '4,126', 'Y', '608'],
+            ['M', '6,891', 'Z', '624'],
+          ].map((row, index) => (
+            <tr key={index} className={index % 2 === 0 ? 'bg-gray-800' : ''}>
+              {row.map((cell, i) => (
+                <td key={i} className="border border-gray-300 px-4 py-2 text-center">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+          <tr>
+            <td colSpan="2" className="font-bold text-center border border-gray-300 px-4 py-2">Total Words:</td>
+            <td colSpan="2" className="font-bold text-center border border-gray-300 px-4 py-2">128,985</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Table;
+
+
+// package.json 
+
+{
+  "name": "randomtext",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.9.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.9",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.41",
+    "raw-loader": "^4.0.2",
+    "tailwindcss": "^3.4.10",
+    "vite": "^5.4.1"
+  }
+}
+
+
+//tailwid 
+
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      fontSize: {
+        '10xl': '10rem',  // Custom size
+        '11xl': '12rem',  // Another custom size
+        // Add more sizes as needed
+      },
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+    },
+  },
+  plugins: [],
+}
